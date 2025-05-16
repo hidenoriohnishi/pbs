@@ -17,48 +17,20 @@ PBS はアプリケーションを **ページ単位** で設計し、**Layout /
 
 ## ドキュメント構造
 
+PBSは、1ファイルで1アプリケーションを記述する。
+
 ```
 <file*>
 └─ # App                         0..1
-   ├─ @Structure                 0..1
-   ├─ @State                  (global) 0..*
-   ├─ @Templates                       0..1
+   ├─ @State                   0..*
+   ├─ @Templates                     0..1
    ├─ @Components                      0..*
-   ├─ @Flow              (global flow) 0..*
+   ├─ @Flow               0..*
    └─ ## Page                          1..*
        ├─ @State                       0..*
-       ├─ @Layout                      1..*
-       ├─ @Components                  0..*
+       ├─ @Layout                     1..*
        └─ @Flow                        0..*
 ```
-
-* グローバルブロック（State / Templates / Components / Flow）は **ファイル内の出現位置自由**
-* ページブロックは `@Layout → @Components → @Flow → @State` の順を推奨（必須ではない）。  
-* 複数ファイルに分割する時、@Structureはインデックスとして作用する。
-  * @Structureを含めたページを`_app_.pbs.txt`として配置し、インデックスの代わりに使う。
-  * 各ページは一つ以上のページを含み慣例として一つのページを1ファイルに対応させる。例：`Home.pbs.txt`
-
-
-```pbs
-# App: My Todo
-@Structure
-  - Home
-  - (Auth): 認証後の領域
-    - TodoList
-    - TodoDetail
-// 以下省略
-```
-
-```pbs
-// Home.pbs.txt
-# App: My Todo
-## Home uses <LPLayout>
-  @Layout for Content
-    (V)
-      (H): Navbar
-      ...
-```
----
 
 ## 記法の早見表（一部）
 
@@ -67,15 +39,60 @@ PBS はアプリケーションを **ページ単位** で設計し、**Layout /
 | `#` / `##` | アプリ / ページ定義 | `# TaskManager`, `## Login` |
 | `@Block` | ブロック開始 | `@Layout`, `@State` |
 | `<Name>` | テンプレートやコンポーネントの定義と参照 | `<MainLayout>` |
-| `[Type]` | 実態要素 | `[Button]`, `[Text]` |
-| `(H)(V)[-]` | 予約レイアウト要素 | `(H)`, `[-]` |
-| `(Custom)` | 任意コンテナ／カテゴリ要素 | `(Header)`, `(Sidebar)` |
+| `[Type]` | 実態要素（要素一覧参照） | `[Button]`, `[Text]` |
+| `...` |  省略。繰り返し表現を省略する | `...` |
+| `(H)(V)(Z)(Div)[-]` | 予約レイアウト要素 | `(H)`, `[-]` |
 | `{{Placeholder}}` | テンプレートの穴 | `{{Content}}` |
-| `On Event -> ` | フローのイベントバインド | `On Click([Button Add]) ->` |
-| `? cond \|case -> expr.` | 条件分岐(ガード文) | `? Todo.completed \|true -> "トグルする"` |
+| `On Event -> ` | フローのイベントバインド | `On [Button]#Add ->` |
+| `? cond \|case1 = expr or statement \|case N ...` | 条件分岐(ガード文) | `? $Todo.completed \|true = トグルする` |
 | `//` / `/* … */` | 行 / ブロックコメント | `// note` |
 
 ---
+
+## 要素一覧
+
+ ```
+ [Text] / [Input] / [Select] / [Option] / [CheckBox] / [Radio]  / [Icon] / [Image] / [Button]
+ ```
+
+## レイアウト表現例
+
+```
+@Layout
+  (V): ドロップダウン
+    [Text]: "選択肢1"
+    [Text]: "選択肢2"
+    [Text]: "選択肢3"
+```
+
+```
+@Layout
+  (H): サーチバー
+    [Input]: 検索ワード欄
+    [Icon]#Search: 虫眼鏡 -> 検索を行う
+```
+
+```
+@Layout
+  (V): テーブル 
+    (H): ヘッダー行
+      (V) [Text]: "名前" // このようなワンライナー表記は許される
+      (V) [Text]: "種類"
+    (H): データ行
+      (V) [Text]: "iPhone" 
+      (V) [Text]: "スマートフォン"
+      ...
+```
+
+```
+@Layout
+  (H): パンクズリスト
+    [Text]: "Top" -> ホームに遷移
+    [Text]: 第二階層のページ名 -> そのページに遷移
+    ...
+```
+
+
 
 ## テンプレート & コンポーネント
 
@@ -90,26 +107,9 @@ PBS はアプリケーションを **ページ単位** で設計し、**Layout /
   @Components
     <Header>
       (H)
-        [Text]: Taskmanager
+        [Text]: "Taskmanager"
         [-]
-        [Icon]: "Settings Gearのアイコン" -> Settings 
-```
-
----
-
-## @Layout ブロック例
-
-```pbs
-## Home uses <MainLayout>
-  @Layout for Content
-```
-
----
-
-## @Flow ブロック例
-
-```pbs
-  @Flow
+        [Icon]: Gearのアイコン -> Settingsに遷移
 ```
 
 ---
@@ -118,7 +118,53 @@ PBS はアプリケーションを **ページ単位** で設計し、**Layout /
 
 ```pbs
   @State
+    Todo
+      id: uuid
+      title: string
+      completed: boolean = false
+      createdAt: datetime = now()
+      tags: string[]
+    Settings
+      theme: 'light' | 'dark' = 'light'
+      language: string = 'ja'
+      notifications: boolean = true
 ```
+
+## @Layout ブロック例
+
+```pbs
+## Home uses <MainLayout>
+  @Layout for Content
+    (V)
+      (H): Header
+        [Text]: "Todo List"
+        [-]
+        [Button]#Add: "新規追加"
+      (V): TodoList
+        [Input]#Search: "検索..."
+        (V)#Todos: 全てのTODOを繰り返し描画
+          <TodoItem>
+          ...
+      (H): Footer
+        [Text]: "合計: {{todos.length}}件"
+        [-]
+        [Button]#Clear: "完了済みを削除" -> 完了済みのTODOを削除する
+```
+
+---
+
+## @Flow ブロック例
+
+```pbs
+  @Flow
+    On Click [Button]#Add ->
+      - フォームの内容を元に新しいTodoを追加
+      ? 追加の結果
+        | 成功 = (Div)#AddModalを閉じる
+        | 失敗 = エラーを表示
+```
+
+---
 
 ## フルサンプル
 
@@ -149,63 +195,68 @@ PBS はアプリケーションを **ページ単位** で設計し、**Layout /
         (H): Header
           [Logo]: "TodoApp"
           [-]
-          // ログイン状態でラベルと挙動をトグル
-          [Button]:
-            ? User.id
-              | true  -> "ログアウト" -> Logout
-              | false -> "ログイン"  -> Login
+          ? $User.idが設定されている
+            | 設定されている = [Button]: "ログアウト" -> Logoutに遷移
+            | 設定されてない = [Button]: "ログイン"  -> Loginに遷移
         (H)
           (V): SideMenu
-            [Link]: ホーム -> Home
-            [Link]: Todo一覧 -> TodoList
-          {{Content}}
+            [Link]: "ホーム" -> Homeに遷移
+            [Link]: "Todo一覧" -> TodoListに遷移
+          (V)
+            {{Content}}
 
   @Components
     <TodoRow>
-      (H)
-        [CheckBox]: 完了 -> "completed をトグル"
-        [Text]: {{title}}
-        [Text]: {{tags.join(',')}}
-        [Button]: 詳細 -> TodoDetail
+      (V)
+        (H)
+          [CheckBox]: "完了" -> completedをトグル //遷移以外の操作も記述できる
+          [Text]: {{title}}
+        (H)
+          [Text]: {{tags.join(',')}}
+          [-]
+          [Button]: "詳細" -> TodoDetailに遷移
 
 ## Home
   @Layout
     (V)
       [HeadLine]: "TODOアプリへようこそ"
-      // ログイン状態によって遷移先が変わる
-      [Button]:
-        ? User.id
-          | true  -> "Todo追加" -> TodoDetail
-          | false -> "ログイン" -> Login
+      ? $User.id
+        | true  = [Button]: "Todo追加" -> TodoDetailに遷移
+        | false = [Button]: "ログイン" -> Loginに遷移
 
 ## TodoList uses <MainFrame>
   @Layout for Content
     (V)
       [HeadLine]: "TODO一覧"
-      [Button]: 新規作成 -> TodoDetail
-      (V) // ここは全Todo分だけ繰り返し描画する
+      [Button]#Add: "新規作成"
+      (V): ここは全Todo分だけ繰り返し描画する
         <TodoRow>
   @Flow
-    On Click [Button]: 新規作成 -> TodoDetail
-
+    On Click [Button]#Add -> TodoDetailに遷移
 ## TodoDetail uses <MainFrame>
   @Layout for Content
     (V)
-      [HeadLine]:
-        ? Todo.id
-          | true  -> "TODO編集"
-          | false -> "新規 TODO"
+      [HeadLine]: ? $Todo.id | true = "TODO編集" | false = "新規 TODO"
       [Input]#Title: タイトル
-      [Input]#Tags: タグ（カンマ区切り）
+      [Input]#Tags: バッジデザインのタグをスペース区切りで並べる
       (H)
         [Button]#Save: 保存
-        ? Todo.id
-          | true -> [Button]#Delete: 削除
+        ? $Todo.id
+          | true = [Button]#Delete: "削除"
   @Flow
     On Click [Button]#Save ->
-      - 入力チェックして保存、TodoListに遷移
+      ? 入力チェック
+        | 成功 =
+          - データを保存する
+          - TodoListに移動する
+        | 失敗 = エラー文を出す
+
     On Click [Button]#Delete ->
-      - 削除確認ダイアログを出し、OKなら削除しTodoListに遷移
+      - 削除確認ダイアログを出す
+      ? 削除確認ダイアログの結果
+        | OK =
+          - 削除処理をする
+          - TodoListに移動する
 ```
 
 
