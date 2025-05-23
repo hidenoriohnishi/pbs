@@ -1,6 +1,6 @@
 # Page Block Syntax (PBS)
 
-![バージョン](https://img.shields.io/badge/version-0.2-blue)
+![バージョン](https://img.shields.io/badge/version-0.4-blue)
 
 Page Block Syntax（PBS）は、アプリケーション仕様を**ページ単位**で記述し、**レイアウト・フロー・ステート**の3観点から整理する軽量マークアップ言語です。
 
@@ -18,6 +18,7 @@ PBSは以下の目的で設計されています：
 2. **記述が容易** - Markdownライクな最小限の記号で完結
 3. **拡張性が高い** - ページの追加・分割・結合が容易
 4. **LLMフレンドリー** - 構文が一意にパースでき、生成AIが補完しやすい
+5. **コンポーネントの再利用** - 共通コンポーネントの定義と参照が可能
 
 ## 基本構文
 
@@ -56,14 +57,15 @@ PBS文書は以下の要素で構成されます：
 
 詳細な仕様については以下をご参照ください：
 
-- [PBS v0.2 仕様書](docs/spec/v0.2/index.md) - 最新版
+- [PBS v0.4 仕様書](docs/spec/v0.4/index.md) - 最新版
+- [PBS v0.3 仕様書](docs/spec/v0.3/index.md)
+- [PBS v0.2 仕様書](docs/spec/v0.2/index.md)
 - [PBS v0.1 仕様書](docs/spec/v0.1/index.md) - 初版
 
 ## 利用方法
 
 1. テキストエディタで`.pbs`拡張子のファイルを作成
 2. 仕様に従ってアプリケーション構造を記述
-3. PBSパーサでパースして検証（開発中）
 
 ## ライセンス
 
